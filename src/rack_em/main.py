@@ -1,6 +1,8 @@
 # rack_em is a python HTTP server created with a socket server
 
+import argparse
 import socket
+import threading
 
 
 # request data is parsed
@@ -55,19 +57,29 @@ def handle_req(socket):
         socket.close()
 
 
+def worker(connection, address):
+    print(f"working on {address} ... for the robots ...")
+    handle_req(connection)
+
+
 # server application
 def main():
+    parser = argparse.ArgumentParser(description="Test File For Robots.")
+    parser.add_argument("--directory", type=str, help="Directory")
+    args = parser.parse_args()
+    global base_directory
+    base_directory = args.directory
+
     server = socket.create_server(("localhost", 4221), reuse_port=True)
+    server.listen()
     print("SERVER UP, PORT 4221")
 
     try:
         while True:
             print("Patiently Waiting For Connection!")
-            connected, location = server.accept()
-            print(f"{location} connected as a robot...")
-
-            handle_req(connected)
-            connected.close()
+            conn, loc = server.accept()
+            t = threading.Thread(target=worker, args=(conn, loc))
+            t.start()
     except KeyboardInterrupt:
         print("\nServer going going going ...")
     finally:
