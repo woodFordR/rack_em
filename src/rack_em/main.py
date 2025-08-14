@@ -1,8 +1,10 @@
+# rack_em is a python HTTP server created with a socket server
+
 import socket
 
 
-# request is parsed
-def seeker(data):
+# request data is parsed
+def find_data_in_req(data):
     info = data.split("\r\n")
     begin = info[0]
     func, loc, v = begin.split(" ")
@@ -16,7 +18,8 @@ def seeker(data):
     return func, loc, v, headers
 
 
-def getter(state, type, body):
+# get the server response
+def get_resp(state, type, body):
     headers = [
         f"HTTP/1.1 {state}",
         f"Content-Type: {type}",
@@ -28,29 +31,31 @@ def getter(state, type, body):
     return default
 
 
-def handler(socket):
+# handler for the request
+def handle_req(socket):
     try:
         data = socket.recv(1024).decode()
         if not data:
             return
 
-        _, path, _, headers = seeker(data)
+        _, path, _, headers = find_data_in_req(data)
         if path == "/":
-            receive = getter("200 OK", "text/plain", "")
+            receive = get_resp("200 OK", "text/plain", "")
         elif path.startswith("/echo/"):
-            string = path.split("/echo")[1]
-            receive = getter("200 OK", "text/plain", string)
+            string = path.split("/echo/")[1]
+            receive = get_resp("200 OK", "text/plain", string)
         elif path == "/user-agent":
             ua = headers.get("User-Agent", "Unknown")
-            receive = getter("200 OK", "text/plain", ua)
+            receive = get_resp("200 OK", "text/plain", ua)
         else:
-            receive = getter("404 Not Found", "text/plain", "")
+            receive = get_resp("404 Not Found", "text/plain", "")
 
         socket.send(receive.encode())
     finally:
         socket.close()
 
 
+# server application
 def main():
     server = socket.create_server(("localhost", 4221), reuse_port=True)
     print("SERVER UP, PORT 4221")
@@ -61,7 +66,7 @@ def main():
             connected, location = server.accept()
             print(f"{location} connected as a robot...")
 
-            handler(connected)
+            handle_req(connected)
             connected.close()
     except KeyboardInterrupt:
         print("\nServer going going going ...")
