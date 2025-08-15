@@ -1,4 +1,5 @@
 # rack_em is a python HTTP server created with a socket server
+
 import argparse
 import os
 import socket
@@ -36,14 +37,33 @@ def get_resp(state, type, body):
 # handler for the request
 def handle_req(socket):
     try:
-        data = socket.recv(1024).decode()
-        if not data:
+        http_req = socket.recv(1024).decode("utf-8")
+        req_body = ""
+
+        if not http_req:
             return
-        resp_file = None
+        else:
+            header_end = http_req.find("\r\n\r\n")
+            body_start = header_end + 4
+            if header_end != -1 and body_start != -1:
+                headers = http_req[:header_end]
+                req_body = http_req[body_start:-1] + http_req[-1]
+            else:
+                headers = http_req[:header_end]
 
-        crud, path, _, headers = find_data_in_req(data)
+        crud, path, _, _ = find_data_in_req(http_req)
 
-        if crud == "GET":
+        if crud == "POST":
+            if path.startswith("/files/"):
+                file = path.split("/files/")[1]
+                f_path = os.path.join(base_directory, file)
+                os.makedirs(os.path.dirname(f_path), exist_ok=True)
+                with open(f_path, "wb") as f:
+                    f.write(req_body.encode("utf-8"))
+                resp = "HTTP/1.1 201 Created\r\n\r\n"
+            else:
+                resp = get_resp("404 Not Found", "text/plain", "")
+        elif crud == "GET":
             if path == "/":
                 resp = get_resp("200 OK", "text/plain", "")
             elif path.startswith("/echo/"):
@@ -58,7 +78,8 @@ def handle_req(socket):
                 if os.path.exists(f_path):
                     with open(f_path, "rb") as f:
                         content = f.read()
-                        resp = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {os.path.getsize(f_path)}\r\n\r\n{content.decode()}"
+                        resp = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {os.path.getsize(f_path)}\r\n\r\n{content.decode('utf-8')}"
+                        f.close()
                 else:
                     resp = get_resp("404 Not Found", "text/plain", "")
             else:
@@ -67,8 +88,6 @@ def handle_req(socket):
             resp = get_resp("404 Not Found", "text/plain", "")
 
         socket.send(resp.encode())
-        if resp_file:
-            socket.sendall(resp_file)
     finally:
         socket.close()
 
