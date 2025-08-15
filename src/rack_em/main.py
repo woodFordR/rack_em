@@ -1,8 +1,6 @@
 # rack_em is a python HTTP server created with a socket server
 import argparse
 import os
-import pathlib
-import re
 import socket
 import threading
 
@@ -23,37 +21,15 @@ def find_data_in_req(data):
 
 
 # get the server response
-def get_resp(state, type, body, file=False):
-    if file:
-        body_len = os.path.getsize(str(body))
-        body_data = ""
-    else:
-        body_len = len(body)
-        body_data = body
-
+def get_resp(state, type, body):
     headers = [
         f"HTTP/1.1 {state}",
         f"Content-Type: {type}",
-        f"Content-Length: {body_len}",
+        f"Content-Length: {len(body)}",
         "",
-        body_data,
+        body,
     ]
     default = "\r\n".join(headers)
-    return default
-
-
-# get file from server
-def get_resp_file(file):
-    f = open(file, "rb")
-    # filesize = os.path.getsize(file)
-    body = f.read()
-    f.close()
-    # status = bytes("HTTP/1.1 200 OK\r\n", "utf-8")
-    # headers = bytes(
-    #     f"Content-Type: {type}/r/n",
-    #     f"Content-Length: {str(filesize)}/r/n",
-    # )
-    default = body
     return default
 
 
@@ -65,20 +41,26 @@ def handle_req(socket):
             return
         resp_file = None
 
-        _, path, _, headers = find_data_in_req(data)
-        if path == "/":
-            resp = get_resp("200 OK", "text/plain", "")
-        elif path.startswith("/echo/"):
-            string = path.split("/echo/")[1]
-            resp = get_resp("200 OK", "text/plain", string)
-        elif path == "/user-agent":
-            ua = headers.get("User-Agent", "Unknown")
-            resp = get_resp("200 OK", "text/plain", ua)
-        elif path.startswith("/files/"):
-            file = path.split("/files/")[1]
-            if file in files:
-                resp = get_resp("200 OK", "application/octet-stream", files[file], True)
-                resp_file = get_resp_file(files[file])
+        crud, path, _, headers = find_data_in_req(data)
+
+        if crud == "GET":
+            if path == "/":
+                resp = get_resp("200 OK", "text/plain", "")
+            elif path.startswith("/echo/"):
+                string = path.split("/echo/")[1]
+                resp = get_resp("200 OK", "text/plain", string)
+            elif path == "/user-agent":
+                ua = headers.get("User-Agent", "Unknown")
+                resp = get_resp("200 OK", "text/plain", ua)
+            elif path.startswith("/files/"):
+                file = path.split("/files/")[1]
+                f_path = os.path.join(base_directory, file)
+                if os.path.exists(f_path):
+                    with open(f_path, "rb") as f:
+                        content = f.read()
+                        resp = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {os.path.getsize(f_path)}\r\n\r\n{content.decode()}"
+                else:
+                    resp = get_resp("404 Not Found", "text/plain", "")
             else:
                 resp = get_resp("404 Not Found", "text/plain", "")
         else:
@@ -104,15 +86,6 @@ def main():
 
     global base_directory
     base_directory = args.directory
-
-    global files
-    files = {}
-    pwd_files = [x for x in pathlib.Path(base_directory).glob("*.*")]
-    for x in pwd_files:
-        file_str = str(x)
-        match = re.search(r"\w+.\w+$", file_str)
-        if match:
-            files[match.group()] = x
 
     server = socket.create_server(("localhost", 4221), reuse_port=True)
     server.listen()
