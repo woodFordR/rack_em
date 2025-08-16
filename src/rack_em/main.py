@@ -1,5 +1,7 @@
 # rack_em is a python HTTP server created with a socket server
+
 import argparse
+import gzip
 import os
 import socket
 import threading
@@ -49,6 +51,12 @@ def get_resp(state, type, body, headers):
         if key.startswith("Content-Encoding"):
             if headers[key] is not None:
                 new_headers.append(f"Content-Encoding: {headers[key]}")
+                if isinstance(body, str):
+                    data = body.encode("utf-8")
+                else:
+                    data = body
+                compressed_data = gzip.compress(data, compresslevel=6)
+                body = compressed_data
             else:
                 continue
         elif key == "Accept-Encoding":
@@ -61,8 +69,16 @@ def get_resp(state, type, body, headers):
         new_headers.append("")
         new_headers.append(body)
 
-    default = "\r\n".join(new_headers)
-    return default + "\r\n\r\n"
+    default = ""
+    for head in new_headers:
+        if isinstance(head, bytes):
+            default = default.encode()
+            default = default + head
+            return default
+        else:
+            default = default + head + "\r\n"
+    default = default + "\r\n"
+    return default.encode()
 
 
 # handler for the request
@@ -109,7 +125,10 @@ def handle_req(socket):
         else:
             resp = get_resp("404 Not Found", "text/plain", "", headers)
 
-        socket.send(resp.encode())
+        if isinstance(resp, str):
+            socket.send(resp.encode())
+        else:
+            socket.sendall(resp)
     finally:
         socket.close()
 
