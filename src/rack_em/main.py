@@ -25,10 +25,13 @@ def find_data_in_req(data):
             break
         h, v = line.split(": ", 1)
         if h == "Accept-Encoding":
-            if v == "gzip":
-                headers["Content-Encoding"] = v
-            elif v == "invalid-encoding":
-                continue
+            encodings = v.split(",")
+            for e in encodings:
+                encoding = e.replace(" ", "")
+                if encoding == "gzip":
+                    headers[f"Content-Encoding-{encoding}"] = encoding
+                else:
+                    headers[f"Content-Encoding-{encoding}"] = None
             else:
                 headers[h] = v
         elif h == "User-Agent":
@@ -39,14 +42,22 @@ def find_data_in_req(data):
 
 # get the server response
 def get_resp(state, type, body, headers):
-    new_headers = [
-        f"HTTP/1.1 {state}",
-        f"Content-Type: {type}",
-        f"Content-Length: {len(body) if body else 0}",
-    ]
-    for header in headers:
-        new_headers.append(f"{header}: {headers[header]}")
+    new_headers = []
+    new_headers.append(f"HTTP/1.1 {state}")
+    new_headers.append(f"Content-Type: {type}")
+    for key in headers:
+        if key.startswith("Content-Encoding"):
+            if headers[key] is not None:
+                new_headers.append(f"Content-Encoding: {headers[key]}")
+            else:
+                continue
+        elif key == "Accept-Encoding":
+            continue
+        else:
+            new_headers.append(f"{key}: {headers[key]}")
+
     if body:
+        new_headers.append(f"Content-Length: {len(body) if body else 0}")
         new_headers.append("")
         new_headers.append(body)
 
