@@ -1,5 +1,4 @@
 # rack_em is a python HTTP server created with a socket server
-
 import argparse
 import os
 import socket
@@ -70,8 +69,10 @@ def handle_req(socket):
                 string = path.split("/echo/")[1]
                 resp = get_resp("200 OK", "text/plain", string)
             elif path == "/user-agent":
-                ua = headers.get("User-Agent", "Unknown")
-                resp = get_resp("200 OK", "text/plain", ua)
+                ua_key = headers.find("User-Agent: ")
+                ua_value = ua_key + 12
+                user_agent = headers[ua_value:-1] + headers[-1]
+                resp = get_resp("200 OK", "text/plain", user_agent)
             elif path.startswith("/files/"):
                 file = path.split("/files/")[1]
                 f_path = os.path.join(base_directory, file)
@@ -92,6 +93,7 @@ def handle_req(socket):
         socket.close()
 
 
+# thread worker
 def worker(connection, address):
     print(f"working on {address} ... for the robots ...")
     handle_req(connection)
@@ -108,19 +110,19 @@ def main():
 
     server = socket.create_server(("localhost", 4221), reuse_port=True)
     server.listen()
-    print("SERVER UP, PORT 4221")
+    print("server server up up ... PORT 4221")
 
     try:
         while True:
-            print("Patiently Waiting For Connection!")
+            print("patiently waiting for that connection ...")
             conn, loc = server.accept()
             t = threading.Thread(target=worker, args=(conn, loc))
             t.start()
     except KeyboardInterrupt:
-        print("\nServer going going going ...")
+        print("\nserver going going going ...")
     finally:
         server.close()
-        print("Server down down down ...")
+        print("server down down down ...")
 
 
 if __name__ == "__main__":
