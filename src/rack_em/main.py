@@ -65,21 +65,19 @@ def get_resp(state, type, body, headers):
             new_headers.append(f"{key}: {headers[key]}")
 
     if body:
-        new_headers.append(f"Content-Length: {len(body) if body else 0}")
-        new_headers.append("")
+        new_headers.append(f"Content-Length: {len(body)}\r\n")
         new_headers.append(body)
+    elif isinstance(body, str):
+        new_headers.append("\r\n")
 
-    default = ""
+    default = b""
     for head in new_headers:
         if isinstance(head, bytes):
-            default = default.encode()
-            default = default + head
-            return default
+            return default + head
         else:
-            default = default + head + "\r\n"
-
-    default = default + "\r\n"
-    return default.encode()
+            rep = head + "\r\n"
+            default = default + rep.encode()
+    return default[:-2]
 
 
 # handler for the request
