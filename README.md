@@ -38,7 +38,7 @@ HTTP/1.1  // HTTP version
 OK        // Optional reason phrase
 \r\n      // CRLF that marks the end of the status line
 
-  - >// Headers (empty)
+  - >// Headers
 \r\n      // CRLF that marks the end of the headers
 
-  - >// Response body (empty)
+  - >// Response body

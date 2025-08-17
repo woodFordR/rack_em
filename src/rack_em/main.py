@@ -55,10 +55,9 @@ def get_response(state, type, body, headers, request_count):
         if key.startswith("Content-Encoding"):
             if headers[key] is not None:
                 response_headers.append(f"Content-Encoding: {headers[key]}")
+                data = body
                 if isinstance(body, str):
                     data = body.encode("utf-8")
-                else:
-                    data = body
                 compressed_data = gzip.compress(data, compresslevel=6)
                 body = compressed_data
             else:
@@ -79,14 +78,14 @@ def get_response(state, type, body, headers, request_count):
     elif isinstance(body, str):
         response_headers.append("\r\n")
 
-    default = b""
-    for head in response_headers:
-        if isinstance(head, bytes):
-            return default + head
+    response = b""
+    for header in response_headers:
+        if isinstance(header, bytes):
+            return response + header
         else:
-            rep = head + "\r\n"
-            default = default + rep.encode()
-    return default[:-2]
+            response_line = header + "\r\n"
+            response = response + response_line.encode()
+    return response[:-2]
 
 
 # handler for the request
