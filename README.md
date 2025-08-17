@@ -1,7 +1,7 @@
 # RACK_EM, A HTTP Server Written in Python Using *[uv](https://docs.astral.sh/uv/)*
 
 ---
-## Woodfords Den
+## Useful Commands
   - ```uvx migrate-to-uv```
   - ```uv sync --dev```
   - ```uv run src/rack_em/main.py```
@@ -10,7 +10,7 @@
   - ```source .venv/bin/activate```
 
 ---
-## curl cli tests
+## Testing With *[curl](https://curl.se/)*
   - ```curl -v http://localhost:3000```
   - ```curl -v http://localhost:3000/university```
   - ```curl -v http://localhost:3000/echo/woodford```
