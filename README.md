@@ -36,12 +36,12 @@
 
 ### response breakdown
   - > // Status line
-HTTP/1.1  // HTTP version
-200       // Status code
-OK        // Optional reason phrase
-\r\n      // CRLF that marks the end of the status line
+    - HTTP/1.1  // HTTP version
+    - 200       // Status code
+    - OK        // Optional reason phrase
+    - \r\n      // CRLF that marks the end of the status line
 
   - >// Headers
-\r\n      // CRLF that marks the end of the headers
+    - \r\n      // CRLF that marks the end of the headers
 
   - >// Response body
