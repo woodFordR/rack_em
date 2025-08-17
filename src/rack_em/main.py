@@ -38,12 +38,14 @@ def find_data_in_req(data):
                 headers[h] = v
         elif h == "User-Agent":
             headers[h] = v
+        elif h == "Connection" and v == "close":
+            headers[h] = v
 
     return func, loc, version, headers, req_body
 
 
 # get the server response
-def get_resp(state, type, body, headers):
+def get_resp(state, type, body, headers, request_count):
     new_headers = []
     new_headers.append(f"HTTP/1.1 {state}")
     new_headers.append(f"Content-Type: {type}")
@@ -61,6 +63,11 @@ def get_resp(state, type, body, headers):
                 continue
         elif key == "Accept-Encoding":
             continue
+        elif key == "Connection":
+            if request_count == 2:
+                new_headers.append(f"{key}: {headers[key]}")
+            else:
+                continue
         else:
             new_headers.append(f"{key}: {headers[key]}")
 
@@ -82,9 +89,11 @@ def get_resp(state, type, body, headers):
 
 # handler for the request
 def handle_req(socket):
+    request_count = 0
     with socket:
         while True:
             http_req = socket.recv(1024).decode("utf-8")
+            request_count += 1
 
             if not http_req:
                 break
@@ -101,16 +110,24 @@ def handle_req(socket):
                             f.write(req_body.encode("utf-8"))
                     resp = "HTTP/1.1 201 Created\r\n\r\n"
                 else:
-                    resp = get_resp("404 Not Found", "text/plain", "", headers)
+                    resp = get_resp(
+                        "404 Not Found", "text/plain", "", headers, request_count
+                    )
             elif crud == "GET":
                 if path == "/":
-                    resp = get_resp("200 OK", "text/plain", "", headers)
+                    resp = get_resp("200 OK", "text/plain", "", headers, request_count)
                 elif path.startswith("/echo/"):
                     string = path.split("/echo/")[1]
-                    resp = get_resp("200 OK", "text/plain", string, headers)
+                    resp = get_resp(
+                        "200 OK", "text/plain", string, headers, request_count
+                    )
                 elif path == "/user-agent":
                     resp = get_resp(
-                        "200 OK", "text/plain", headers["User-Agent"], headers
+                        "200 OK",
+                        "text/plain",
+                        headers["User-Agent"],
+                        headers,
+                        request_count,
                     )
                 elif path.startswith("/files/"):
                     file = path.split("/files/")[1]
@@ -121,16 +138,26 @@ def handle_req(socket):
                             resp = f"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {os.path.getsize(f_path)}\r\n\r\n{content.decode('utf-8')}"
                             f.close()
                     else:
-                        resp = get_resp("404 Not Found", "text/plain", "", headers)
+                        resp = get_resp(
+                            "404 Not Found", "text/plain", "", headers, request_count
+                        )
                 else:
-                    resp = get_resp("404 Not Found", "text/plain", "", headers)
+                    resp = get_resp(
+                        "404 Not Found", "text/plain", "", headers, request_count
+                    )
             else:
-                resp = get_resp("404 Not Found", "text/plain", "", headers)
+                resp = get_resp(
+                    "404 Not Found", "text/plain", "", headers, request_count
+                )
 
             if isinstance(resp, str):
                 socket.send(resp.encode())
             else:
                 socket.sendall(resp)
+
+            if "Connection" in headers.keys() and request_count == 2:
+                if headers["Connection"] == "close":
+                    socket.shutdown()
 
 
 def worker(connection, address):
@@ -150,13 +177,9 @@ def main():
     global base_directory
     base_directory = args.directory
 
-    # server = socket.create_server(("localhost", 4221), reuse_port=True)
-    # server.listen()
-
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((SERVER, PORT))
+    with socket.create_server((SERVER, PORT), reuse_port=True) as s:
         s.listen(5)
-        print("server up up up ... port port port 4221 ...\n")
+        print(f"server up up up ... port port port {PORT} ...\n")
 
         try:
             while True:
