@@ -1,9 +1,7 @@
-## HTTP Server in Python with uv
+# RACK_EM, A HTTP Server Written in Python Using *[uv](https://docs.astral.sh/uv/)*
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-
-### Woodfords Den
+---
+## Woodfords Den
   - ```uvx migrate-to-uv```
   - ```uv sync --dev```
   - ```uv run src/rack_em/main.py```
@@ -12,8 +10,7 @@
   - ```source .venv/bin/activate```
 
 ---
-
-### curl cli tests
+## curl cli tests
   - ```curl -v http://localhost:3000```
   - ```curl -v http://localhost:3000/university```
   - ```curl -v http://localhost:3000/echo/woodford```
@@ -32,16 +29,23 @@
   - ```curl --http1.1 -v http://localhost:3000/echo/strawberry --next http://localhost:3000/user-agent -H "User-Agent: kiwi/peach-kiwi"```
   - ```curl --http1.1 -v http://localhost:3000/user-agent -H "User-Agent: vanilla/cranberry-lime" --next http://localhost:3000/echo/sushi```
   - ```curl --http1.1 -v http://localhost:3000/echo/aqua-green --next http://localhost:3000/ -H "Connection: close"```
----
 
-### response breakdown
-  - >//Status line
+---
+## Response Breakdown
+  - >**Status Line**
     - >>HTTP/1.1 `HTTP version`
     - >>200 `Status code`
     - >>OK `Optional reason phrase`
     - >>\r\n `CRLF that marks the end of the status line`
 
-  - >//Headers
+  - >**Headers**
     - >>\r\n `CRLF that marks the end of the headers`
 
-  - >//Response body
+  - >**Response Body**
+
+---
+## Links
+
+  - [HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) 
+  - [HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
+
