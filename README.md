@@ -4,9 +4,12 @@
 [HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
 
 ### Woodfords Den
- - ```uvx migrate-to-uv```
- - ```uv sync --dev``` 
- - ```uv run src/rack_em/main.py``` 
+  - ```uvx migrate-to-uv```
+  - ```uv sync --dev```
+  - ```uv run src/rack_em/main.py```
+  - ```uv python pin 3.13.5```
+  - ```uv venv -p 3.13.5```
+  - ```source .venv/bin/activate```
 
 ---
 

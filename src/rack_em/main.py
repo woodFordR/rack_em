@@ -7,7 +7,7 @@ import socket
 import threading
 
 SERVER = "localhost"
-PORT = 4221
+PORT = 3000
 
 
 # request data is parsed
@@ -175,7 +175,7 @@ def handle_request(socket):
 
             if "Connection" in request_headers.keys() and request_count == 2:
                 if request_headers["Connection"] == "close":
-                    s.shutdown()
+                    break
 
 
 def request_worker(connection, address):
@@ -190,7 +190,7 @@ def main():
     args = parser.parse_args()
 
     global base_dir
-    base_dir = args.directory
+    base_dir = args.dir
 
     with socket.create_server((SERVER, PORT), reuse_port=True) as s:
         s.listen(5)
